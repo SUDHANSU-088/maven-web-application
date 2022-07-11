@@ -1,0 +1,24 @@
+node{
+def mavenHome = tool name: "maven3.8.4"
+stage('gitCheckOut'){
+  git branch: 'development', changelog: false, credentialsId: '30caf281-ae3e-48b6-8793-c495bf54fe6d', poll: false, url: 'https://github.com/SUDHANSU-088/maven-web-application.git'
+}
+stage('Build'){
+ sh "${mavenHome}/bin/mvn clean package"
+}
+stage('CodeQuality'){
+ sh "${mavenHome}/bin/mvn sonar:sonar" 
+}
+stage('uploadArtifact'){
+ sh "${mavenHome}/bin/mvn deploy"
+}
+stage('deploy'){
+ sshagent(['47497c39-7216-46b8-ad04-5fbd7a2f8d0f']) {
+  sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@65.2.121.170:/opt/apache-tomcat-9.0.64/webapps"
+}   
+}
+stage('sendmail'){
+emailext body: '''BuildOver...
+Regards Sudhansu''', subject: 'BuildOver', to: 'sudhansu@gmail.com'
+}
+}
